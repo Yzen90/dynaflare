@@ -1,0 +1,10 @@
+[package]
+name = "dynaflare"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.93"
+duration-human = "0.1.10"
+figment = { version = "0.10.19", features = ["toml"] }
+serde = { version = "1.0.215", features = ["derive"] }
