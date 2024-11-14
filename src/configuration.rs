@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Ok, Result};
 use figment::{
   providers::{Format, Toml},
   Figment,
@@ -15,12 +15,16 @@ use crate::utils::duration_human::deserialize_duration;
 pub struct Configuration {
   #[serde(default, deserialize_with = "deserialize_duration")]
   pub interval: Option<Duration>,
-  // pub api_token: String,
+  pub api_token: String,
   pub zone: String,
   pub records: Vec<String>,
   pub log_level: Option<LevelFilter>,
 }
 
 pub fn load() -> Result<Configuration> {
-  Figment::new().merge(Toml::file(CONFIG_FILE)).extract().context("Configuration load")
+  let mut configuration: Configuration =
+    Figment::new().merge(Toml::file(CONFIG_FILE)).extract().context("Configuration load")?;
+
+  configuration.api_token.insert_str(0, "Bearer ");
+  Ok(configuration)
 }
