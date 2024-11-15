@@ -7,7 +7,7 @@ pub struct Record {
   pub content: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct APIError {
   pub code: u32,
   pub message: String,
@@ -24,22 +24,22 @@ pub struct IP {
   pub ip: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct BatchResult {
   pub errors: Vec<APIError>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct NewRecord {
   pub id: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct CreateResult {
   pub posts: Vec<NewRecord>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct BatchWithCreateResult {
   pub result: CreateResult,
   pub errors: Vec<APIError>,

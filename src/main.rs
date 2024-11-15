@@ -9,7 +9,7 @@ use anyhow::{anyhow, Context, Error, Result};
 use configuration::Configuration;
 use log::{debug, info, warn};
 use std::{thread::sleep, time::Duration};
-use ureq::{Agent, AgentBuilder, Error as RequestError};
+use ureq::{serde_json, Agent, AgentBuilder, Error as RequestError};
 
 use constants::AUTHORIZATION_HEADER;
 use types::*;
@@ -33,9 +33,8 @@ fn main() -> Result<()> {
         sleep(interval);
 
         let current_ip = public_ip(&client).context("Public IP retrieval")?;
-        if current_ip != last_ip {
-          last_ip = current_ip;
 
+        if current_ip != last_ip {
           dns_batch(
             &client,
             &url,
@@ -43,9 +42,11 @@ fn main() -> Result<()> {
             Batch {
               patches: records_ids.iter().map(|id| RecordUpdate { id: id.clone(), content: last_ip.clone() }).collect(),
             },
-          )?;
+          )
+          .context("DNS records batch operation")?;
+          info!("Public IP changed, the DNS records have been updated. Current: {} Previous: {}", current_ip, last_ip);
 
-          info!("Public IP changed, the DNS records have been updated")
+          last_ip = current_ip;
         }
       }
     }
@@ -56,10 +57,10 @@ fn main() -> Result<()> {
 
 fn sync_records(client: &Agent, configuration: &Configuration) -> Result<(Vec<String>, String, String)> {
   let mut base_url = format!("https://api.cloudflare.com/client/v4/zones/{}/dns_records", configuration.zone);
-  let dns_records_url = format!("{base_url}");
+  let dns_records_url = format!("{base_url}?type=A");
 
   let records_list = dns_records(&client, &dns_records_url, &configuration).context("DNS records retrieval")?;
-  let last_ip = public_ip(&client).context("Public IP retrieval")?;
+  let current_ip = public_ip(&client).context("Public IP retrieval")?;
 
   let mut records = configuration.records.clone();
   let mut records_ids = Vec::<String>::with_capacity(records.len());
@@ -73,8 +74,8 @@ fn sync_records(client: &Agent, configuration: &Configuration) -> Result<(Vec<St
     if let Some(index) = records.iter().position(|name| *name == record.name) {
       records_ids.push(record.id.clone());
 
-      if record.content != last_ip {
-        changed_records.push(RecordUpdate { id: record.id, content: last_ip.clone() });
+      if record.content != current_ip {
+        changed_records.push(RecordUpdate { id: record.id, content: current_ip.clone() });
       }
 
       records.swap_remove(index);
@@ -87,22 +88,35 @@ fn sync_records(client: &Agent, configuration: &Configuration) -> Result<(Vec<St
   info!("new records: {}", records.len());
 
   for record in records {
-    new_records.push(RecordCreate { name: record.clone(), content: last_ip.clone(), ttl: TTL::TTL });
+    new_records.push(RecordCreate { name: record.clone(), content: current_ip.clone(), ttl: TTL::TTL });
   }
 
   base_url.push_str("/batch");
+  let changed = changed_records.len();
+  let new = new_records.len();
+
   if !new_records.is_empty() {
-    records_ids.extend(dns_batch_with_create(
-      &client,
-      &base_url,
-      &configuration,
-      BatchWithCreate { patches: changed_records, posts: new_records },
-    )?);
+    records_ids.extend(
+      dns_batch_with_create(
+        &client,
+        &base_url,
+        &configuration,
+        BatchWithCreate { patches: changed_records, posts: new_records },
+      )
+      .context("DNS records batch operation")?,
+    );
+
+    log_changes(&current_ip, new, changed);
   } else if !changed_records.is_empty() {
-    dns_batch(&client, &base_url, &configuration, Batch { patches: changed_records })?;
+    dns_batch(&client, &base_url, &configuration, Batch { patches: changed_records })
+      .context("DNS records batch operation")?;
+
+    log_changes(&current_ip, new, changed);
+  } else {
+    info!("Public IP is {current_ip}. No record changes needed.")
   }
 
-  Ok((records_ids, last_ip, base_url))
+  Ok((records_ids, current_ip, base_url))
 }
 
 fn public_ip(client: &Agent) -> Result<String> {
@@ -143,8 +157,13 @@ fn dns_records(client: &Agent, url: &str, configuration: &Configuration) -> Resu
 
 fn dns_batch(client: &Agent, url: &str, configuration: &Configuration, batch: Batch) -> Result<()> {
   debug!("Sending DNS records batch");
+
+  info!("SENT:\n{}", serde_json::ser::to_string(&batch)?);
+
   let data: BatchResult =
     client.get(url).set(AUTHORIZATION_HEADER, &configuration.api_token).send_json(batch)?.into_json()?;
+
+  info!("RECEIVED:\n{}", serde_json::ser::to_string(&data)?);
 
   if data.errors.is_empty() {
     Ok(())
@@ -161,8 +180,12 @@ fn dns_batch_with_create(
 ) -> Result<Vec<String>> {
   debug!("Sending DNS records batch with new records");
 
+  info!("SENT:\n{}", serde_json::ser::to_string(&batch)?);
+
   let data: BatchWithCreateResult =
     client.get(url).set(AUTHORIZATION_HEADER, &configuration.api_token).send_json(batch)?.into_json()?;
+
+  info!("RECEIVED:\n{}", serde_json::ser::to_string(&data)?);
 
   if data.errors.is_empty() {
     Ok(data.result.posts.iter().map(|record| record.id.clone()).collect())
@@ -173,4 +196,8 @@ fn dns_batch_with_create(
 
 fn flatten_error(errors: Vec<APIError>) -> String {
   errors.iter().map(|APIError { code, message }| format!("[{code}] {message} ")).collect()
+}
+
+fn log_changes(current_ip: &String, new: usize, changed: usize) -> () {
+  info!("Public IP is {current_ip}. Records created: {}, Records updated: {}.", new, changed)
 }
