@@ -11,7 +11,7 @@ use log::{debug, info, warn};
 use std::{thread::sleep, time::Duration};
 use ureq::{serde_json, Agent, AgentBuilder, Error as RequestError};
 
-use constants::AUTHORIZATION_HEADER;
+use constants::*;
 use types::*;
 
 fn main() -> Result<()> {
@@ -68,6 +68,7 @@ fn sync_records(client: &Agent, configuration: &Configuration) -> Result<(Vec<St
   let mut new_records = Vec::<RecordCreate>::new();
 
   info!("zone records: {}", records_list.len());
+  info!("{:#?}", records_list);
   info!("records: {}", records.len());
 
   for record in records_list {
@@ -160,8 +161,13 @@ fn dns_batch(client: &Agent, url: &str, configuration: &Configuration, batch: Ba
 
   info!("SENT:\n{}", serde_json::ser::to_string(&batch)?);
 
-  let data: BatchResult =
-    client.get(url).set(AUTHORIZATION_HEADER, &configuration.api_token).send_json(batch)?.into_json()?;
+  let data: BatchResult = client
+    .post(url)
+    .set(CONTENT_TYPE_HEADER, JSON_MIME)
+    .set(AUTHORIZATION_HEADER, &configuration.api_token)
+    .send_json(batch)
+    .map_err(request_error)?
+    .into_json()?;
 
   info!("RECEIVED:\n{}", serde_json::ser::to_string(&data)?);
 
@@ -182,8 +188,13 @@ fn dns_batch_with_create(
 
   info!("SENT:\n{}", serde_json::ser::to_string(&batch)?);
 
-  let data: BatchWithCreateResult =
-    client.get(url).set(AUTHORIZATION_HEADER, &configuration.api_token).send_json(batch)?.into_json()?;
+  let data: BatchWithCreateResult = client
+    .post(url)
+    .set(CONTENT_TYPE_HEADER, JSON_MIME)
+    .set(AUTHORIZATION_HEADER, &configuration.api_token)
+    .send_json(batch)
+    .map_err(request_error)?
+    .into_json()?;
 
   info!("RECEIVED:\n{}", serde_json::ser::to_string(&data)?);
 
@@ -200,4 +211,13 @@ fn flatten_error(errors: Vec<APIError>) -> String {
 
 fn log_changes(current_ip: &String, new: usize, changed: usize) -> () {
   info!("Public IP is {current_ip}. Records created: {}, Records updated: {}.", new, changed)
+}
+
+fn request_error(error: RequestError) -> Error {
+  match error {
+    RequestError::Status(code, response) => {
+      Error::msg(format!("[{}] {}", code, response.into_string().unwrap_or(String::new())))
+    }
+    _ => Error::new(error),
+  }
 }
