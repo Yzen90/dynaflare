@@ -16,7 +16,7 @@ pub struct Configuration {
   #[serde(default, deserialize_with = "deserialize_duration")]
   pub interval: Option<Duration>,
   pub api_token: String,
-  pub zone: String,
+  pub zone_id: String,
   pub records: Vec<String>,
   pub log_level: Option<LevelFilter>,
 }

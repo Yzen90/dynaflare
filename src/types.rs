@@ -53,17 +53,11 @@ pub struct RecordUpdate {
 }
 
 #[derive(Serialize)]
-pub enum TTL {
-  #[serde(rename = "60")]
-  TTL,
-}
-
-#[derive(Serialize)]
 #[serde(tag = "type", rename = "A")]
 pub struct RecordCreate {
   pub name: String,
   pub content: String,
-  pub ttl: TTL,
+  pub ttl: u16,
 }
 
 #[derive(Serialize)]
