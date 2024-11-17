@@ -3,7 +3,11 @@ name = "dynaflare"
 version = "1.0.0"
 edition = "2021"
 license = "GPL-3.0-only"
+authors = ["Edgar Montiel Cruz <edgar@yzen.pro>"]
 description = "Simple DDNS client for Cloudflare"
+repository = "https://github.com/Yzen90/dynaflare"
+keywords = ["ddns", "cloudflare"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 anyhow = "1.0.93"

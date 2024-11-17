@@ -1,0 +1,13 @@
+[Unit]
+Description=DynaFlare simple DDNS client for Cloudflare
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=${DYNAFLARE_USER}
+WorkingDirectory=${DYNAFLARE_WDIR}
+ExecStart=${DYNAFLARE_EXEC}
+
+[Install]
+WantedBy=multi-user.target
