@@ -122,7 +122,7 @@ fn sync_records(client: &Agent, configuration: &Configuration) -> Result<(Vec<St
 
     log_changes(&current_ip, new, changed);
   } else {
-    info!("Public IP is {current_ip}. No record changes needed.")
+    info!("Public IP is {current_ip}. No records changes needed.")
   }
 
   Ok((records_ids, current_ip, base_url))

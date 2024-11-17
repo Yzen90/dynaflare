@@ -1,5 +1,5 @@
 # DynaFlare
-## Simple IPv4 DDNS client for Cloudflare
+#### Simple IPv4 DDNS client for Cloudflare. Works on the Raspberry Pi!
 
 
 ### 1. Obtaining DynaFlare
@@ -11,24 +11,27 @@ cd dynaflare
 cargo build --release
 ```
 
-#### Crate
+#### Install crate
 ```shell
 cargo install dynaflare
 ```
 
-#### Pre-built binaries
-- [Linux aarch64](https://github.com/Yzen90/dynaflare/releases/download/v1.0.0/dynaflare-v1.0.0-aarch64-linux.zip)
-- [Linux x86_64](https://github.com/Yzen90/dynaflare/releases/download/v1.0.0/dynaflare-v1.0.0-x86_64-linux.zip)
-- [Windows x86_64](https://github.com/Yzen90/dynaflare/releases/download/v1.0.0/dynaflare-v1.0.0-x86_64-windows.zip)
+#### Download a pre-built binary
+- [Linux aarch64](https://github.com/Yzen90/dynaflare/releases/latest/download/dynaflare-aarch64-linux.zip)
+- [Linux x86_64](https://github.com/Yzen90/dynaflare/releases/latest/download/dynaflare-x86_64-linux.zip)
+- [Windows x86_64](https://github.com/Yzen90/dynaflare/releases/latest/download/dynaflare-x86_64-windows.zip)
 
 
 ### 2. Configuration
 
 DynaFlare looks in the current working directory for a `configuration.toml` file with the following fields:
 
-- `interval` (Optional): If not provided, dynaflare will check and update de provided records only once and then exit. Otherwise dynaflare will keep runing and continuosly check at this interval for public ip changes and update the dns record when necessary.
+- `interval` (Optional): String with one or more pairs of a positive integer immediately followed by 'days', 'h', 'min', 's', 'ms', 'μs' or 'ns'. If not provided, dynaflare will check and update de provided records only once and then exit. Otherwise dynaflare will keep runing and continuously check at this interval for public ip changes and update the dns records when necessary.
+
 - `zone_id` (Required): ID of the Clouldflare Zone that contains the provided dns records.
+
 - `api_token` (Required): Cloudflare API token with DNS read and edit permissions for the provided zone.
+
 - `records` (Required): DNS records to set to the current public IP address.
 
 #### Example `configuration.toml`
@@ -40,6 +43,7 @@ api_token = "cloudflare api token here"
 records = ["dynamic.example.com"]
 ```
 
+
 ### 3. systemd service
 
 A systemd service unit file template for DynaFlare is provided in the repository that can be used as follows to install a systemd service:
@@ -49,7 +53,7 @@ export DYNAFLARE_USER=dynaflare # User that the process will be executed as
 export DYNAFLARE_WDIR=/usr/local/etc/dynaflare # Directory where configuration.toml is located
 export DYNAFLARE_EXEC=/usr/local/bin/dynaflare # Path of dynaflare executable file
 
-sudo envsubst < dynaflare.service > /etc/systemd/system/dynaflare.service
+envsubst < dynaflare.service | sudo tee /etc/systemd/system/dynaflare.service
 
 sudo systemctl start dynaflare
 sudo systemctl status dynaflare
@@ -59,7 +63,7 @@ sudo systemctl enable dynaflare
 #### Example systemd unit file
 ```ini
 [Unit]
-Description=DynaFlare simple DDNS client for Cloudflare
+Description=DynaFlare, a simple DDNS client for Cloudflare
 After=network-online.target
 Wants=network-online.target
 

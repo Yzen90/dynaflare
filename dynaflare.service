@@ -1,5 +1,5 @@
 [Unit]
-Description=DynaFlare simple DDNS client for Cloudflare
+Description=DynaFlare, a simple DDNS client for Cloudflare
 After=network-online.target
 Wants=network-online.target
 
