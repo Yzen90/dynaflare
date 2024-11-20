@@ -40,7 +40,7 @@ fn main() -> Result<()> {
                 Batch {
                   patches: records_ids
                     .iter()
-                    .map(|id| RecordUpdate { id: id.clone(), content: last_ip.clone() })
+                    .map(|id| RecordUpdate { id: id.clone(), content: current_ip.clone() })
                     .collect(),
                 },
               )
