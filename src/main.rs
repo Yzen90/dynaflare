@@ -27,6 +27,10 @@ fn main() -> Result<()> {
     let (records_ids, mut last_ip, url) = sync_records(&client, &configuration)?;
 
     if !interval.is_zero() {
+      let group_errors = configuration.group_errors.unwrap_or(false);
+      let mut last_error = String::new();
+      let mut error_count: usize = 0;
+
       loop {
         sleep(interval);
 
@@ -47,20 +51,29 @@ fn main() -> Result<()> {
               .context("DNS records batch operation")
               {
                 Ok(()) => {
+                  if error_count > 0 {
+                    log_errors(None, &mut last_error, &mut error_count, &group_errors);
+                  }
+
                   info!(
                     "Public IP changed, DNS records have been updated. Current: {} Previous: {}",
                     current_ip, last_ip
                   )
                 }
-                Err(err) => error!("{:?}", err),
+                Err(err) => log_errors(Some(err), &mut last_error, &mut error_count, &group_errors),
               };
 
               last_ip = current_ip;
             } else {
-              debug!("Public IP is {current_ip}. No records changes needed.")
+              if error_count == 0 {
+                debug!("Public IP is {current_ip}. No records changes needed.")
+              } else {
+                log_errors(None, &mut last_error, &mut error_count, &group_errors);
+                info!("Public IP is {current_ip}. No records changes needed.")
+              }
             }
           }
-          Err(err) => error!("{:?}", err),
+          Err(err) => log_errors(Some(err), &mut last_error, &mut error_count, &group_errors),
         }
       }
     }
@@ -219,5 +232,38 @@ fn request_error(error: RequestError) -> Error {
       Error::msg(format!("[{}] {}", code, response.into_string().unwrap_or(String::new())))
     }
     _ => Error::new(error),
+  }
+}
+
+fn log_errors(err: Option<Error>, last_error: &mut String, error_count: &mut usize, group: &bool) -> () {
+  if let Some(err) = err {
+    let current_error = format!("{:?}", err);
+
+    if *group {
+      if current_error != *last_error {
+        if *error_count > 1 {
+          error!("Additional errors: {} - {}", *error_count - 1, *last_error);
+        }
+
+        error!("{}", current_error);
+
+        *error_count = 0;
+        *last_error = current_error;
+      }
+    } else {
+      error!("{}", current_error);
+    }
+
+    *error_count += 1;
+  } else {
+    *error_count = 0;
+
+    if *group {
+      if *error_count > 1 {
+        error!("Additional errors: {} - {}", *error_count - 1, *last_error);
+      }
+
+      *last_error = String::new();
+    }
   }
 }

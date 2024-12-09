@@ -32,7 +32,7 @@ DynaFlare looks in the current working directory for a `configuration.toml` file
 
 - `api_token` (Required): Cloudflare API token with DNS read and edit permissions for the provided zone.
 
-- `records` (Required): DNS records to set to the current public IP address.
+- `records` (Required): DNS records to update or create with the current public IPv4 address.
 
 #### Example `configuration.toml`
 

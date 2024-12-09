@@ -1,0 +1,12 @@
+{
+	"[rust]": {
+		"editor.formatOnSave": true
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "biomejs.biome",
+		"editor.formatOnSave": true
+	},
+	"[toml]": {
+		"editor.formatOnSave": true
+	}
+}

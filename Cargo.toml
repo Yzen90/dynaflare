@@ -10,10 +10,15 @@ keywords = ["ddns", "cloudflare"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-anyhow = "1.0.93"
+anyhow = "1.0.94"
 duration-human = "0.1.10"
 fern = { version = "0.7.0", features = ["colored"] }
 figment = { version = "0.10.19", features = ["toml"] }
 log = { version = "0.4.22", features = ["serde"] }
 serde = { version = "1.0.215", features = ["derive"] }
-ureq = { version = "2.10.1", features = ["tls", "native-certs", "json", "charset"], default-features = false }
+ureq = { version = "2.12.1", features = [
+  "tls",
+  "native-certs",
+  "json",
+  "charset",
+], default-features = false }
