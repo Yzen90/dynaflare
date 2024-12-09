@@ -19,7 +19,7 @@ pub struct Configuration {
   pub zone_id: String,
   pub records: Vec<String>,
   pub log_level: Option<LevelFilter>,
-  pub group_errors: Option<bool>,
+  pub count_repeated_errors: Option<bool>,
 }
 
 pub fn load() -> Result<Configuration> {

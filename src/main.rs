@@ -27,7 +27,7 @@ fn main() -> Result<()> {
     let (records_ids, mut last_ip, url) = sync_records(&client, &configuration)?;
 
     if !interval.is_zero() {
-      let group_errors = configuration.group_errors.unwrap_or(false);
+      let count_repeated_errors = configuration.count_repeated_errors.unwrap_or(false);
       let mut last_error = String::new();
       let mut error_count: usize = 0;
 
@@ -52,7 +52,7 @@ fn main() -> Result<()> {
               {
                 Ok(()) => {
                   if error_count > 0 {
-                    log_errors(None, &mut last_error, &mut error_count, &group_errors);
+                    log_errors(None, &mut last_error, &mut error_count, &count_repeated_errors);
                   }
 
                   info!(
@@ -60,7 +60,7 @@ fn main() -> Result<()> {
                     current_ip, last_ip
                   )
                 }
-                Err(err) => log_errors(Some(err), &mut last_error, &mut error_count, &group_errors),
+                Err(err) => log_errors(Some(err), &mut last_error, &mut error_count, &count_repeated_errors),
               };
 
               last_ip = current_ip;
@@ -68,12 +68,12 @@ fn main() -> Result<()> {
               if error_count == 0 {
                 debug!("Public IP is {current_ip}. No records changes needed.")
               } else {
-                log_errors(None, &mut last_error, &mut error_count, &group_errors);
+                log_errors(None, &mut last_error, &mut error_count, &count_repeated_errors);
                 info!("Public IP is {current_ip}. No records changes needed.")
               }
             }
           }
-          Err(err) => log_errors(Some(err), &mut last_error, &mut error_count, &group_errors),
+          Err(err) => log_errors(Some(err), &mut last_error, &mut error_count, &count_repeated_errors),
         }
       }
     }
@@ -242,7 +242,7 @@ fn log_errors(err: Option<Error>, last_error: &mut String, error_count: &mut usi
     if *group {
       if current_error != *last_error {
         if *error_count > 1 {
-          error!("Additional errors: {} - {}", *error_count - 1, *last_error);
+          error!("Additional {} errors of: {}", *error_count - 1, *last_error);
         }
 
         error!("{}", current_error);
@@ -256,14 +256,14 @@ fn log_errors(err: Option<Error>, last_error: &mut String, error_count: &mut usi
 
     *error_count += 1;
   } else {
-    *error_count = 0;
-
     if *group {
       if *error_count > 1 {
-        error!("Additional errors: {} - {}", *error_count - 1, *last_error);
+        error!("Additional {} errors of: {}", *error_count - 1, *last_error);
       }
 
       *last_error = String::new();
     }
+
+    *error_count = 0;
   }
 }
