@@ -60,12 +60,12 @@ fn main() -> Result<()> {
                   info!(
                     "Public IP changed, DNS records have been updated. Current: {} Previous: {}",
                     current_ip, last_ip
-                  )
+                  );
+
+                  last_ip = current_ip;
                 }
                 Err(err) => log_errors(Some(err), &mut last_error, &mut error_count, &count_repeated_errors),
               };
-
-              last_ip = current_ip;
             } else {
               if error_count == 0 {
                 debug!("Public IP is {current_ip}. No records changes needed.")
@@ -237,11 +237,11 @@ fn request_error(error: RequestError) -> Error {
   }
 }
 
-fn log_errors(err: Option<Error>, last_error: &mut String, error_count: &mut usize, group: &bool) -> () {
+fn log_errors(err: Option<Error>, last_error: &mut String, error_count: &mut usize, count: &bool) -> () {
   if let Some(err) = err {
     let current_error = format!("{:?}", err);
 
-    if *group {
+    if *count {
       if current_error != *last_error {
         if *error_count > 1 {
           error!("Additional {} errors of: {}", *error_count - 1, *last_error);
@@ -258,7 +258,7 @@ fn log_errors(err: Option<Error>, last_error: &mut String, error_count: &mut usi
 
     *error_count += 1;
   } else {
-    if *group {
+    if *count {
       if *error_count > 1 {
         error!("Additional {} errors of: {}", *error_count - 1, *last_error);
       }
