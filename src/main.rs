@@ -18,6 +18,8 @@ fn main() -> Result<()> {
   let configuration = configuration::load()?;
   utils::logging::initialize(&configuration)?;
 
+  info!("DynaFlare v{}", VERSION);
+
   if configuration.records.is_empty() {
     warn!("No records provided, nothing to do!");
   } else {
