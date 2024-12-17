@@ -77,6 +77,8 @@ Type=simple
 User=dynaflare
 WorkingDirectory=/usr/local/etc/dynaflare
 ExecStart=/usr/local/bin/dynaflare
+Restart=on-failure
+RestartSec=1min
 
 [Install]
 WantedBy=multi-user.target

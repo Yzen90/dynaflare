@@ -8,6 +8,8 @@ Type=simple
 User=${DYNAFLARE_USER}
 WorkingDirectory=${DYNAFLARE_WDIR}
 ExecStart=${DYNAFLARE_EXEC}
+Restart=on-failure
+RestartSec=1min
 
 [Install]
 WantedBy=multi-user.target
